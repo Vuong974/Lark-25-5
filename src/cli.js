@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { LarkClient, loadDotenv } from './larkClient.js';
 
@@ -37,10 +37,17 @@ function defaults(args) {
 
 function parseJson(input, label) {
   try {
-    return JSON.parse(input);
+    return JSON.parse(String(input).replace(/^\uFEFF/, ''));
   } catch (error) {
     throw new Error(`${label} must be valid JSON. ${error.message}`);
   }
+}
+
+async function readJsonArg(args, key) {
+  if (args[`${key}File`]) {
+    return parseJson(await readFile(args[`${key}File`], 'utf8'), `--${key}File`);
+  }
+  return parseJson(required(args[key], key), `--${key}`);
 }
 
 function fieldFromArgs(args) {
@@ -55,6 +62,12 @@ function fieldFromArgs(args) {
         .split(',')
         .map((name) => ({ name: name.trim() }))
         .filter((option) => option.name)
+    };
+  }
+  if (args.linkTableId) {
+    field.property = {
+      table_id: args.linkTableId,
+      multiple: args.multiple === true || args.multiple === 'true'
     };
   }
   return field;
@@ -194,19 +207,19 @@ async function main() {
   }
 
   if (command === 'create-record') {
-    const fields = parseJson(required(args.fields, 'fields'), '--fields');
+    const fields = await readJsonArg(args, 'fields');
     console.log(JSON.stringify(await client.createRecord(required(appToken, 'appToken'), required(tableId, 'tableId'), fields), null, 2));
     return;
   }
 
   if (command === 'update-record') {
-    const fields = parseJson(required(args.fields, 'fields'), '--fields');
+    const fields = await readJsonArg(args, 'fields');
     console.log(JSON.stringify(await client.updateRecord(required(appToken, 'appToken'), required(tableId, 'tableId'), required(args.recordId, 'recordId'), fields), null, 2));
     return;
   }
 
   if (command === 'batch-update') {
-    const records = parseJson(required(args.records, 'records'), '--records');
+    const records = await readJsonArg(args, 'records');
     console.log(JSON.stringify(await client.batchUpdateRecords(required(appToken, 'appToken'), required(tableId, 'tableId'), records), null, 2));
     return;
   }
