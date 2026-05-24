@@ -1,0 +1,16 @@
+{
+  "name": "lark-kna",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lark": "node src/cli.js",
+    "token": "node src/cli.js token",
+    "tables": "node src/cli.js tables",
+    "records": "node src/cli.js records",
+    "report": "node src/cli.js report"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

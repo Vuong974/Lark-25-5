@@ -1,0 +1,4 @@
+.env
+.lark-token-cache.json
+reports/
+node_modules/
